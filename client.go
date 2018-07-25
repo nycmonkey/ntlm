@@ -49,7 +49,7 @@ func (t HTTPDomainClientTransport) RoundTrip(req *http.Request) (res *http.Respo
 		return
 	}
 
-	resauth := authheader(res.Header.Get(`Www-Authenticate`))
+	resauth := authheader(res.Header[`Www-Authenticate`])
 	if !resauth.IsNegotiate() && !resauth.IsNTLM() {
 		// can't do anymore here
 		return
@@ -81,7 +81,7 @@ func (t HTTPDomainClientTransport) RoundTrip(req *http.Request) (res *http.Respo
 			return
 		}
 
-		resauth = authheader(res.Header.Get(`Www-Authenticate`))
+		resauth = authheader(res.Header[`Www-Authenticate`])
 		challenge, err := resauth.GetData()
 		if err != nil {
 			return res, err
@@ -97,6 +97,7 @@ func (t HTTPDomainClientTransport) RoundTrip(req *http.Request) (res *http.Respo
 		if err != nil {
 			return res, err
 		}
+		req.Header.Del("Authorization")
 
 		if resauth.IsNTLM() {
 			req.Header.Set("Authorization", "NTLM "+base64.StdEncoding.EncodeToString(authMsg))
