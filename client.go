@@ -1,6 +1,6 @@
 // Package ntlm provides an http transport implementation to allow
 // Go programs running on enterprise Windows machines to connect
-// to NTLM-protected web services. 
+// to NTLM-protected web services.
 //
 // Adapted from https://github.com/Azure/go-ntlmssp
 package ntlm
@@ -8,6 +8,7 @@ package ntlm
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 	sspintlm "github.com/alexbrainman/sspi/ntlm"
 )
 
-// HttpDomainClientTransport can be used as an HTTP
+// HTTPDomainClientTransport can be used as an HTTP
 // transport for http clients running on Windows
 // machines authenticated to a domain that wish to
 // interact with HTTP servers on the same domain
@@ -83,18 +84,18 @@ func (t HTTPDomainClientTransport) RoundTrip(req *http.Request) (res *http.Respo
 		resauth = authheader(res.Header.Get(`Www-Authenticate`))
 		challenge, err := resauth.GetData()
 		if err != nil {
-			return
+			return res, err
 		}
-		if !(resauth.IsNegotiate() || resauth.IsNTLM() || len(challenge) == 0 {
+		if !(resauth.IsNegotiate() || resauth.IsNTLM()) || len(challenge) == 0 {
 			return res, fmt.Errorf("NTLM negotiation failed")
-		})
-		
+		}
+
 		io.Copy(ioutil.Discard, res.Body)
 		res.Body.Close()
 
 		authMsg, err := secctx.Update(challenge)
 		if err != nil {
-			return
+			return res, err
 		}
 
 		if resauth.IsNTLM() {
@@ -103,7 +104,7 @@ func (t HTTPDomainClientTransport) RoundTrip(req *http.Request) (res *http.Respo
 			req.Header.Set("Authorization", "Negotiate "+base64.StdEncoding.EncodeToString(authMsg))
 		}
 		req.Body = ioutil.NopCloser(bytes.NewReader(body.Bytes()))
-		res, err = t.RoundTripper.RoundTrip(req)
+		return t.RoundTripper.RoundTrip(req)
 	}
 	return
 }
