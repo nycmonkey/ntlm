@@ -1,8 +1,11 @@
+// +build windows
+
 // Package ntlm provides an http transport implementation to allow
 // Go programs running on enterprise Windows machines to connect
 // to NTLM-protected web services.
 //
 // Adapted from https://github.com/Azure/go-ntlmssp
+//
 package ntlm
 
 import (
