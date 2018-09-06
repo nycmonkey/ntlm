@@ -36,12 +36,15 @@ func (h authheader) IsNTLM() bool {
 }
 
 func (h authheader) GetData() ([]byte, error) {
-	if len(h) != 1 {
-		return nil, fmt.Errorf(`unexpected auth header length`)
+	for _, s := range h {
+		if !strings.HasPrefix(s, `NTLM`) {
+			continue
+		}
+		p := strings.Split(s, " ")
+		if len(p) < 2 {
+			return nil, nil
+		}
+		return base64.StdEncoding.DecodeString(string(p[1]))
 	}
-	p := strings.Split(string(h[0]), " ")
-	if len(p) < 2 {
-		return nil, nil
-	}
-	return base64.StdEncoding.DecodeString(string(p[1]))
+	return nil, fmt.Errorf(`No NTLM auth header found`)
 }
